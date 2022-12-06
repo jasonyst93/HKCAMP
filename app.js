@@ -21,12 +21,12 @@ const helmet = require('helmet')
 const campgroundRoutes = require('./routes/campgrounds');
 const reviewRoutes = require('./routes/reviews');
 const userRoutes = require('./routes/users');
-const dbURL = process.env.DB_URL;
+const dbUrl = process.env.DB_URL || "mongodb://localhost:27017/yelp-camp";
 const MongoStore = require('connect-mongo');
 
 //mongodb://localhost:27017/yelp-camp
 
-mongoose.connect("mongodb://localhost:27017/yelp-camp", {
+mongoose.connect(dbUrl, {
     //useNewUrlParser: true,
     //useCreateIndex: true,
     //useUnifiedTopology: true,
@@ -51,20 +51,22 @@ app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(mongoSanitize());
 
+const secret = process.env.SECERT || 'thisshouldbeabettersecret!'
+
 const store = MongoStore.create({
-    mongoUrl: 'mongodb://localhost:27017/yelp-camp',
-    secret: 'thisshouldbeabettersecret',
+    mongoUrl: dbUrl,
+    secret: secret,
     touchAfter: 24 * 60 * 60//any change on session ->  no change - 24hrs update once
 })
 
 store.on("error", function (e) { //error handling on store
-    console.log("Session store error")
+    console.log("Session store error", e)
 })
 
 const sessionConfig = {
     store, //pass MongoStore in
     name: 'session',//just another name 
-    secret: 'thisshouldbeabettersecret',
+    secret: secret,
     resave: false,
     saveUninitialized: true,
     cookie: {
@@ -168,5 +170,5 @@ app.use((err, req, res, next) => {
 })
 
 app.listen(3000, () => {
-    console.log('Serving on port 3000')
+    console.log('Connected')
 })
